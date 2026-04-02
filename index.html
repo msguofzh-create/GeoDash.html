@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+    <base href="https://rawcdn.githack.com/genizy/google-class/main/gdlite/">
+    <title>Geometry Dash - School Project</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <style>
+        body {
+            margin: 0;
+            background: #000;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            width: 100vw;
+        }
+        #gameContainer { width: 100vw; height: 100vh; position: relative; }
+        canvas { width: 100%; height: 100%; display: block; }
+        #loader {
+            position: absolute; left: 0; top: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: linear-gradient(#000, #0066ff);
+            z-index: 99;
+        }
+        .logo { max-width: 80%; max-height: 50%; margin-bottom: 20px; }
+        .progress-bar { width: 300px; height: 20px; background: rgba(255,255,255,0.2); border-radius: 10px; overflow: hidden; }
+        .progress-fill { width: 0%; height: 100%; background: #fff; transition: width 0.2s; }
+        #cover {
+            position: fixed;
+            top: 33%;
+            left: 56%;
+            width: 25%;
+            height: 25%;
+            background: transparent;
+            z-index: 9999;
+            cursor: default;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer"></div>
+    <div id="cover"></div>
+    <div id="loader">
+        <img class="logo" src="image/loading.png?v=1">
+        <div class="progress-bar"><div class="progress-fill" id="fill"></div></div>
+    </div>
+    <script>
+        window.open = () => null;
+    </script>
+    <script src="Build/UnityLoader.js"></script>
+    <script>
+        var gameInstance = UnityLoader.instantiate("gameContainer", "Build/GeometryDashLite.json", {
+            onProgress: (instance, progress) => {
+                document.getElementById('fill').style.width = (progress * 100) + "%";
+                if (progress === 1) {
+                    setTimeout(() => { document.getElementById('loader').style.display = "none"; }, 1500);
+                }
+            }
+        });
+
+        setInterval(() => {
+            document.querySelectorAll('button').forEach(btn => {
+                if (btn.innerText === "OK") btn.click();
+            });
+
+            // Check if "More Games" button is visible by reading canvas pixels
+            var canvas = document.querySelector('canvas');
+            if (canvas) {
+                try {
+                    var gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+                    if (gl) {
+                        // Sample a pixel where the golden "MORE GAMES" text should be
+                        var x = Math.floor(canvas.width * 0.68);
+                        var y = Math.floor(canvas.height * 0.42);
+                        var pixel = new Uint8Array(4);
+                        gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
+                        var r = pixel[0], g = pixel[1], b = pixel[2];
+
+                        // The "MORE GAMES" text is golden/yellow (high red, high green, low blue)
+                        var isGolden = r > 150 && g > 150 && b < 100;
+                        // Or bright green from the icon (high green, lower red/blue)
+                        var isGreen = g > 150 && r < 100 && b < 100;
+
+                        document.getElementById('cover').style.display = (isGolden || isGreen) ? 'block' : 'none';
+                    }
+                } catch (e) {}
+            }
+        }, 500);
+    </script>
+</body>
+</html>
